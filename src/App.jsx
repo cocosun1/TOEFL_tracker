@@ -198,6 +198,7 @@ const translations = {
     days: 'days',
     submitChoices: 'Submit choices',
     undo: 'Undo',
+    resetProfile: 'Reset profile',
   },
   zh: {
     eyebrow: '托福进度规划',
@@ -263,6 +264,7 @@ const translations = {
     days: '天',
     submitChoices: '提交选择',
     undo: '撤销',
+    resetProfile: '重置资料',
   },
 }
 
@@ -280,7 +282,7 @@ function App() {
   const [activeView, setActiveView] = useState('planner')
   const [userName, setUserName] = useState('')
   const [greeting, setGreeting] = useState('')
-  const [language, setLanguage] = useState('en')
+  const [language, setLanguage] = useState('zh')
   const [focusBuckets, setFocusBuckets] = useState([])
   const [dailyPointGoal, setDailyPointGoal] = useState(100)
   const [showSettings, setShowSettings] = useState(false)
@@ -289,7 +291,7 @@ function App() {
   const [emojiRainGlobal, setEmojiRainGlobal] = useState([])
   const emojiTimeoutRef = useRef({ local: null, global: null })
   const [formName, setFormName] = useState('')
-  const [formLanguage, setFormLanguage] = useState('en')
+  const [formLanguage, setFormLanguage] = useState('zh')
   const [formFocusBuckets, setFormFocusBuckets] = useState([])
   const [formDailyPointGoal, setFormDailyPointGoal] = useState(100)
 
@@ -353,7 +355,7 @@ function App() {
     (sum, tasks) => sum + (tasks || []).length,
     0
   )
-  const isOnboarding = !userName || focusBuckets.length === 0
+  const isOnboarding = !userName
   const isSettingsOpen = showSettings || isOnboarding
   const isSettingsMode = showSettings && !isOnboarding
   const activeManageBucket = buckets.find(
@@ -364,7 +366,7 @@ function App() {
 
   useEffect(() => {
     const storedName = window.localStorage.getItem('toeflUserName') || ''
-    const storedLanguage = window.localStorage.getItem('toeflLanguage') || 'en'
+    const storedLanguage = window.localStorage.getItem('toeflLanguage') || 'zh'
     const storedGoals = window.localStorage.getItem('toeflGoals')
     if (storedName) {
       setUserName(storedName)
@@ -726,7 +728,7 @@ function App() {
     event.preventDefault()
     const cleanedName = formName.trim()
     const goalValue = Number(formDailyPointGoal)
-    if (!cleanedName || formFocusBuckets.length === 0 || goalValue <= 0) {
+    if (!cleanedName || goalValue <= 0) {
       return
     }
     const normalizedGoal = Math.round(goalValue)
@@ -743,6 +745,15 @@ function App() {
         dailyPointGoal: normalizedGoal,
       })
     )
+    setShowSettings(false)
+  }
+
+  const handleResetProfile = () => {
+    window.localStorage.removeItem('toeflUserName')
+    window.localStorage.removeItem('toeflGoals')
+    setUserName('')
+    setFocusBuckets([])
+    setDailyPointGoal(100)
     setShowSettings(false)
   }
 
@@ -1255,31 +1266,33 @@ function App() {
               <option value="en">{t('english')}</option>
               <option value="zh">{t('chinese')}</option>
             </select>
-            <div className="form-section">
-              <p className="form-label">{t('focusBucketsLabel')}</p>
-              <p className="form-label subtle">{t('taskCategoriesLabel')}</p>
-              <div className="focus-grid">
-                {buckets.map((bucket) => {
-                  const isFocused = formFocusBuckets.includes(bucket.id)
-                  return (
-                    <label key={bucket.id} className="focus-card">
-                      <input
-                        type="checkbox"
-                        checked={isFocused}
-                        onChange={() =>
-                          setFormFocusBuckets((prev) =>
-                            prev.includes(bucket.id)
-                              ? prev.filter((id) => id !== bucket.id)
-                              : [...prev, bucket.id]
-                          )
-                        }
-                      />
-                      {getBucketName(bucket.id)}
-                    </label>
-                  )
-                })}
+            {isSettingsMode && (
+              <div className="form-section">
+                <p className="form-label">{t('focusBucketsLabel')}</p>
+                <p className="form-label subtle">{t('taskCategoriesLabel')}</p>
+                <div className="focus-grid">
+                  {buckets.map((bucket) => {
+                    const isFocused = formFocusBuckets.includes(bucket.id)
+                    return (
+                      <label key={bucket.id} className="focus-card">
+                        <input
+                          type="checkbox"
+                          checked={isFocused}
+                          onChange={() =>
+                            setFormFocusBuckets((prev) =>
+                              prev.includes(bucket.id)
+                                ? prev.filter((id) => id !== bucket.id)
+                                : [...prev, bucket.id]
+                            )
+                          }
+                        />
+                        {getBucketName(bucket.id)}
+                      </label>
+                    )
+                  })}
+                </div>
               </div>
-            </div>
+            )}
             <div className="form-section">
               <p className="form-label">{t('pointsPerDayLabel')}</p>
               <p className="form-label subtle">{t('pointsHint')}</p>
@@ -1306,6 +1319,15 @@ function App() {
               <button type="submit" className="primary">
                 {isSettingsMode ? t('save') : t('continue')}
               </button>
+              {isSettingsMode && (
+                <button
+                  type="button"
+                  className="secondary"
+                  onClick={handleResetProfile}
+                >
+                  {t('resetProfile')}
+                </button>
+              )}
             </div>
           </form>
         </div>
